@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle</title>
+    <style>
+        /* General Styling */
+        body {
+            margin: 0;
+            font-family: 'poppins', sans-serif;
+            background: #fdf5e6;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+
+        /* Fade-in intro screen */
+        #intro {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            z-index: 2;
+            animation: fadeOut 5s forwards;
+        }
+
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        /* Game Layout */
+        #game-container {
+            position: relative;
+            width: 90%;
+            height: 80%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #sentence {
+            margin: 20px 0;
+            min-height: 60px;
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            font-size: 1.2rem;
+            border: 2px dashed #ff6b6b;
+            background: #fff8dc;
+            color: #444;
+            border-radius: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-start;
+            white-space: nowrap;
+            gap: 10px;
+        }
+
+        /* Bubble styling */
+        .bubble {
+            background: #ff6b6b;
+            color: #fff;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 20px;
+            cursor: grab;
+            font-size: 1rem;
+            user-select: none;
+            display: inline-block;
+            position: relative;
+            transition: transform 0.5s ease, opacity 0.5s ease;
+        }
+
+        .bubble:active {
+            cursor: grabbing;
+        }
+
+        /* Button styling */
+        #clear {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            background: #ff6b6b;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #clear:hover {
+            background: #ff4c4c;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            #game-container {
+                width: 100%;
+                height: 70%;
+            }
+
+            #sentence {
+                font-size: 1rem;
+            }
+
+            .bubble {
+                font-size: 0.9rem;
+                padding: 8px 15px;
+            }
+
+            #clear {
+                font-size: 0.9rem;
+                padding: 8px 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #sentence {
+                font-size: 0.9rem;
+            }
+
+            .bubble {
+                font-size: 0.8rem;
+                padding: 6px 12px;
+            }
+
+            #clear {
+                font-size: 0.8rem;
+                padding: 6px 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Intro Screen -->
+    <div id="intro">
+        Solve this to get something that I made for you
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container">
+        <div id="sentence"></div>
+        <div id="bubbles"></div>
+        <button id="clear">Clear</button>
+    </div>
+
+    <script>
+        const sentence = "I love you forever and right now all I need is one of your warm endless hugs.";
+        const words = sentence.split(" ");
+        const sentenceArea = document.getElementById("sentence");
+        const bubblesContainer = document.getElementById("bubbles");
+        const clearButton = document.getElementById("clear");
+
+        // Shuffle words
+        function shuffleWords() {
+            return words.sort(() => Math.random() - 0.5);
+        }
+
+        // Populate bubbles
+        function createBubbles() {
+            bubblesContainer.innerHTML = "";
+            shuffleWords().forEach((word) => {
+                const bubble = document.createElement("div");
+                bubble.classList.add("bubble");
+                bubble.textContent = word;
+
+                bubble.setAttribute("draggable", true);
+
+                // Desktop drag start event
+                bubble.addEventListener("dragstart", (e) => {
+                    e.dataTransfer.setData("text", word);
+                });
+
+                // Mobile touch event
+                bubble.addEventListener("touchend", (e) => {
+                    const touch = e.changedTouches[0];
+                    const word = e.target.textContent;
+
+                    // Get position of the sentence area
+                    const sentenceBounds = sentenceArea.getBoundingClientRect();
+                    const touchX = touch.clientX - sentenceBounds.left;
+                    const touchY = touch.clientY - sentenceBounds.top;
+
+                    // Only allow dropping inside the dashed area
+                    if (touchX >= 0 && touchX <= sentenceBounds.width && touchY >= 0 && touchY <= sentenceBounds.height) {
+                        const span = document.createElement("span");
+                        span.textContent = word + " ";
+                        sentenceArea.appendChild(span);
+
+                        // Check for completion
+                        if (sentenceArea.textContent.trim() === sentence) {
+                            setTimeout(() => {
+                                alert("You did it! Now come get your hug 🫂❤️.");
+                            }, 500);
+                        }
+
+                        // Remove the word bubble after drop
+                        e.target.remove();
+                    }
+                });
+
+                // Add the bubble to the container
+                bubblesContainer.appendChild(bubble);
+            });
+        }
+
+        // Allow drop on sentence area (desktop)
+        sentenceArea.addEventListener("dragover", (e) => {
+            e.preventDefault();
+        });
+
+        sentenceArea.addEventListener("drop", (e) => {
+            const word = e.dataTransfer.getData("text");
+
+            const span = document.createElement("span");
+            span.textContent = word + " ";
+            sentenceArea.appendChild(span);
+
+            // Check for completion
+            if (sentenceArea.textContent.trim() === sentence) {
+                setTimeout(() => {
+                    alert("You did it! Now come get your hug 🫂❤️.");
+                }, 500);
+            }
+
+            // Remove the word bubble after drop
+            const droppedBubble = [...document.getElementsByClassName("bubble")].find(
+                (b) => b.textContent === word
+            );
+            if (droppedBubble) {
+                droppedBubble.remove();
+            }
+        });
+
+        // Clear button functionality
+        clearButton.addEventListener("click", () => {
+            sentenceArea.innerHTML = "";
+            createBubbles();
+        });
+
+        // Initialize game
+        createBubbles();
+    </script>
+</body>
+
+</html>
